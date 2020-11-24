@@ -37,8 +37,8 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
                     {
                         Id = i,
                         Name = $"FighterMan {i + 1}",
-                        Constitution = 11,
-                        Strength = 15,
+                        Constitution = 15,
+                        Strength = 11,
                         Intelligence = 8
                     });
                 else
@@ -73,14 +73,21 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
             Task<Turn> StrategicCombat()
             {
+                if(!request.IsCombat)
+                    return Task.FromResult(new Turn(TurnAction.Attack));
+
                 if (HealthChecker.NeedsToChug(request.PartyMember) && request.PossibleActions.Contains(TurnAction.DrinkPotion))
                     return Task.FromResult(new Turn(TurnAction.DrinkPotion));
+
 
                 return Task.FromResult(new Turn(TurnAction.Attack, Targeter.GetPriorityTarget(request.PossibleTargets)));
             }
 
             Task<Turn> StrategicNonCombat()
             {
+                if (request.PossibleActions.Contains(TurnAction.Attack))
+                    return StrategicCombat();
+
                 var movements = MovementTracker.GetMovementActions();
                 if (request.PossibleActions.Contains(TurnAction.Loot))
                     return Task.FromResult(new Turn(TurnAction.Loot));
@@ -107,6 +114,7 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
             {
                 return targets.OrderBy(e => e.CurrentHealthPoints).FirstOrDefault();
             }
+
         }
 
         class HealthChecker
