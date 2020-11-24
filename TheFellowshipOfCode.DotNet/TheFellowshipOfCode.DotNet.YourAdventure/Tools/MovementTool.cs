@@ -59,7 +59,28 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure.Tools
                     return TurnAction.WalkEast;
 
                 case TurnAction.WalkWest:
+                    return TurnAction.WalkSouth;
+
+                default:
+                    return TurnAction.WalkSouth;
+            }
+        }
+
+        public static TurnAction Rightify(TurnAction previous)
+        {
+            switch (previous)
+            {
+                case TurnAction.WalkNorth:
+                    return TurnAction.WalkEast;
+
+                case TurnAction.WalkEast:
+                    return TurnAction.WalkSouth;
+
+                case TurnAction.WalkSouth:
                     return TurnAction.WalkWest;
+
+                case TurnAction.WalkWest:
+                    return TurnAction.WalkNorth;
 
                 default:
                     return TurnAction.WalkSouth;

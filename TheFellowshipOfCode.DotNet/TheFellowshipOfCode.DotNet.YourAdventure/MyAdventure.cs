@@ -91,7 +91,7 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
                     request.PossibleActions.Where(s => movements.Contains(s));
 
                 var direction = movetracker.GetNextDirection(movementoptions.ToList(), request.PartyLocation);
-                movetracker.RegisterMove(request.PartyLocation, movementoptions.Count()> 1, direction);
+                movetracker.RegisterMove(request.PartyLocation, movementoptions.Count() > 1, direction);
 
 
                 return Task.FromResult(new Turn(direction));
@@ -127,6 +127,7 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
             public Stack<TrackedLocation> LocationsTracker { get; } = new Stack<TrackedLocation>();
             public Stack<TurnAction> ActionTracker { get; set; } = new Stack<TurnAction>();
 
+
             public bool BeenToTarget(Location currentLocation, TurnAction action)
             {
                 return LocationsTracker.Any(s => s.Location == MovementTool.ApplyMovement(currentLocation, action));
@@ -144,6 +145,7 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
             public TurnAction GetNextDirection(IList<TurnAction> movements, Location loc)
             {
+
                 TurnAction previous;
                 try
                 {
@@ -153,13 +155,19 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
                 {
                     return movements[new Random().Next(movements.Count)];
                 }
+
+                if (movements.Count == 2) //Only going on and going back
+                    return previous;//Keep going
+
                 var trimHasBeen = movements.Where(s => !BeenToTarget(loc, s));
 
 
-                TurnAction dirToGoBias;
+                TurnAction dirToGoBias = MovementTool.Leftify(previous);
+                if (trimHasBeen.Contains(dirToGoBias))
+                    return dirToGoBias;
                 do
                 {
-                    dirToGoBias = MovementTool.Leftify(previous);
+                    dirToGoBias = MovementTool.Rightify(dirToGoBias);
                 } while (!trimHasBeen.Contains(dirToGoBias) && dirToGoBias != previous);
 
                 return dirToGoBias == previous ? MovementTool.Reverse(previous) : dirToGoBias;
