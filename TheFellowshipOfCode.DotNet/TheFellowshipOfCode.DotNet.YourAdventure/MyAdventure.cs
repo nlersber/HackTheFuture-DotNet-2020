@@ -10,6 +10,7 @@ using HTF2020.Contracts.Models.Party;
 using HTF2020.Contracts.Requests;
 using HTF2020.Contracts.Models.Enemies;
 using TheFellowshipOfCode.DotNet.YourAdventure.Models;
+using TheFellowshipOfCode.DotNet.YourAdventure.Tools;
 
 namespace TheFellowshipOfCode.DotNet.YourAdventure
 {
@@ -67,8 +68,7 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
             Task<Turn> Strategic()
             {
 
-                if (HealthChecker.NeedsToChug(request.PartyMember) && request.PossibleActions.Contains(TurnAction.DrinkPotion))
-                    return Task.FromResult(new Turn(TurnAction.DrinkPotion));
+
 
                 return request.IsCombat ? StrategicCombat() : StrategicNonCombat();
 
@@ -76,6 +76,9 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
             Task<Turn> StrategicCombat()
             {
+                if (HealthChecker.NeedsToChug(request.PartyMember) && request.PossibleActions.Contains(TurnAction.DrinkPotion))
+                    return Task.FromResult(new Turn(TurnAction.DrinkPotion));
+
                 return Task.FromResult(new Turn(TurnAction.Attack, Targeter.GetPriorityTarget(request.PossibleTargets)));
             }
 
@@ -86,6 +89,8 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
                 if (request.PossibleActions.Contains(TurnAction.Open))
                     return Task.FromResult(new Turn(TurnAction.Open));
+
+
 
                 return Task.FromResult(new Turn(TurnAction.WalkSouth));
             }
@@ -122,17 +127,17 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
             public bool BeenToTarget(Location currentLocation, TurnAction action)
             {
-                switch (action){
-                    case TurnAction.WalkNorth: Location loc = currentLocation;
-                        loc.Y++;
-                        return Actions.Any(s => s.Location == loc);
-
-                    default: return true;
-                }
+                return Actions.Any(s => s.Location == MovementTool.ApplyMovement(currentLocation, action));
             }
+
             public void RegisterMove(Location loc, bool isInter, TurnAction ac)
             {
                 Actions.Push(new TrackedLocation(loc, isInter, ac));
+            }
+
+            public static IList<TurnAction> GetMovementActions()
+            {
+                return new List<TurnAction>() { TurnAction.WalkSouth, TurnAction.WalkNorth, TurnAction.WalkWest, TurnAction.WalkEast };
             }
 
 
