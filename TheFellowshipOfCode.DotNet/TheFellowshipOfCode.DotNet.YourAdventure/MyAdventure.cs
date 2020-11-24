@@ -25,7 +25,7 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
         {
             var party = new Party
             {
-                Name = "My Party",
+                Name = "Fellowship of the chickenwing",
                 Members = new List<PartyMember>()
             };
 
@@ -36,7 +36,7 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
                     party.Members.Add(new Fighter()
                     {
                         Id = i,
-                        Name = $"FighterMan {i + 1}",
+                        Name = $"FighterMan",
                         Constitution = 15,
                         Strength = 11,
                         Intelligence = 8
@@ -45,7 +45,7 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
                     party.Members.Add(new Wizard()
                     {
                         Id = i,
-                        Name = $"Tim {i + 1}",
+                        Name = $"Tim the Enchanter",
                         Constitution = 11,
                         Strength = 8,
                         Intelligence = 15
@@ -57,20 +57,15 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
         public Task<Turn> PlayTurn(PlayTurnRequest request)
         {
+            var avoidCombat = false;
 
             return Strategic();
-            //return PlayToEnd();
-
-            //Task<Turn> PlayToEnd()
-            //{
-            //    return Task.FromResult(request.PossibleActions.Contains(TurnAction.WalkSouth) ? new Turn(TurnAction.WalkSouth) : new Turn(request.PossibleActions[_random.Next(request.PossibleActions.Length)]));
-            //}
 
             Task<Turn> Strategic()
             {
                 return request.IsCombat ? StrategicCombat() : StrategicNonCombat();
             }
-
+            
             Task<Turn> StrategicCombat()
             {
                 if(!request.IsCombat)
@@ -79,13 +74,13 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
                 if (HealthChecker.NeedsToChug(request.PartyMember) && request.PossibleActions.Contains(TurnAction.DrinkPotion))
                     return Task.FromResult(new Turn(TurnAction.DrinkPotion));
 
-
                 return Task.FromResult(new Turn(TurnAction.Attack, Targeter.GetPriorityTarget(request.PossibleTargets)));
             }
-
+            
+            
             Task<Turn> StrategicNonCombat()
             {
-                if (request.PossibleActions.Contains(TurnAction.Attack))
+                if (request.PossibleActions.Contains(TurnAction.Attack) && _random.NextDouble() > 0.5)
                     return StrategicCombat();
 
                 var movements = MovementTracker.GetMovementActions();
@@ -99,8 +94,6 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
                     request.PossibleActions.Where(s => movements.Contains(s));
 
                 var direction = movetracker.GetNextDirection(movementoptions.ToList(), request.PartyLocation);
-
-                //movetracker.RegisterMove(request.PartyLocation, movementoptions.Count() > 1, direction);
 
                 Debug.WriteLine(direction);
 
