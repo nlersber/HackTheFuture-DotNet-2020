@@ -44,5 +44,26 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure.Tools
 
             return new Location(x, y);
         }
+
+        public static TurnAction Leftify(TurnAction previous)
+        {
+            switch (previous)
+            {
+                case TurnAction.WalkNorth:
+                    return TurnAction.WalkWest;
+
+                case TurnAction.WalkEast:
+                    return TurnAction.WalkNorth;
+
+                case TurnAction.WalkSouth:
+                    return TurnAction.WalkEast;
+
+                case TurnAction.WalkWest:
+                    return TurnAction.WalkWest;
+
+                default:
+                    return TurnAction.WalkSouth;
+            }
+        }
     }
 }

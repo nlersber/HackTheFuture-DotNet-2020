@@ -67,11 +67,7 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
             Task<Turn> Strategic()
             {
-
-
-
                 return request.IsCombat ? StrategicCombat() : StrategicNonCombat();
-
             }
 
             Task<Turn> StrategicCombat()
@@ -84,15 +80,21 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
             Task<Turn> StrategicNonCombat()
             {
+                var movements = MovementTracker.GetMovementActions();
                 if (request.PossibleActions.Contains(TurnAction.Loot))
                     return Task.FromResult(new Turn(TurnAction.Loot));
 
                 if (request.PossibleActions.Contains(TurnAction.Open))
                     return Task.FromResult(new Turn(TurnAction.Open));
 
+                var movementoptions =
+                    request.PossibleActions.Where(s => movements.Contains(s));
+
+                var direction = movetracker.GetNextDirection(movementoptions.ToList(), request.PartyLocation);
+                movetracker.RegisterMove(request.PartyLocation, movementoptions.Count()> 1, direction);
 
 
-                return Task.FromResult(new Turn(TurnAction.WalkSouth));
+                return Task.FromResult(new Turn(direction));
             }
         }
 
@@ -100,8 +102,7 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
         {
             public static Enemy GetPriorityTarget(Enemy[] targets)
             {
-                //TODO get them best target to BRUTALLY MURDER
-                return targets.FirstOrDefault();
+                return targets.OrderBy(e => e.CurrentHealthPoints).FirstOrDefault();
             }
         }
 
@@ -123,22 +124,48 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
         class MovementTracker
         {
-            public Stack<TrackedLocation> Actions { get; } = new Stack<TrackedLocation>();
+            public Stack<TrackedLocation> LocationsTracker { get; } = new Stack<TrackedLocation>();
+            public Stack<TurnAction> ActionTracker { get; set; } = new Stack<TurnAction>();
 
             public bool BeenToTarget(Location currentLocation, TurnAction action)
             {
-                return Actions.Any(s => s.Location == MovementTool.ApplyMovement(currentLocation, action));
+                return LocationsTracker.Any(s => s.Location == MovementTool.ApplyMovement(currentLocation, action));
             }
 
             public void RegisterMove(Location loc, bool isInter, TurnAction ac)
             {
-                Actions.Push(new TrackedLocation(loc, isInter, ac));
+                LocationsTracker.Push(new TrackedLocation(loc, isInter, ac));
             }
 
             public static IList<TurnAction> GetMovementActions()
             {
                 return new List<TurnAction>() { TurnAction.WalkSouth, TurnAction.WalkNorth, TurnAction.WalkWest, TurnAction.WalkEast };
             }
+
+            public TurnAction GetNextDirection(IList<TurnAction> movements, Location loc)
+            {
+                TurnAction previous;
+                try
+                {
+                    previous = LocationsTracker.Peek().Action;
+                }
+                catch (Exception)
+                {
+                    return movements[new Random().Next(movements.Count)];
+                }
+                var trimHasBeen = movements.Where(s => !BeenToTarget(loc, s));
+
+
+                TurnAction dirToGoBias;
+                do
+                {
+                    dirToGoBias = MovementTool.Leftify(previous);
+                } while (!trimHasBeen.Contains(dirToGoBias) && dirToGoBias != previous);
+
+                return dirToGoBias == previous ? MovementTool.Reverse(previous) : dirToGoBias;
+
+            }
+
 
 
         }
