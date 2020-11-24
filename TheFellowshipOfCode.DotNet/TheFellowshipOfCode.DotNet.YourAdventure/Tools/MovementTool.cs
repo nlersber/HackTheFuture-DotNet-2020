@@ -28,10 +28,10 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure.Tools
             switch (ac)
             {
                 case TurnAction.WalkNorth:
-                    y++;
+                    y--;
                     break;
                 case TurnAction.WalkSouth:
-                    y--;
+                    y++;
                     break;
                 case TurnAction.WalkEast:
                     x++;

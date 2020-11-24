@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using HTF2020.Contracts;
@@ -91,8 +92,10 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
                     request.PossibleActions.Where(s => movements.Contains(s));
 
                 var direction = movetracker.GetNextDirection(movementoptions.ToList(), request.PartyLocation);
-                movetracker.RegisterMove(request.PartyLocation, movementoptions.Count() > 1, direction);
 
+                //movetracker.RegisterMove(request.PartyLocation, movementoptions.Count() > 1, direction);
+
+                Debug.WriteLine(direction);
 
                 return Task.FromResult(new Turn(direction));
             }
@@ -124,18 +127,23 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
         class MovementTracker
         {
-            public Stack<TrackedLocation> LocationsTracker { get; } = new Stack<TrackedLocation>();
+            public Stack<TrackedLocation> StepTracker { get; } = new Stack<TrackedLocation>();
+            public Stack<Location> LocationsTracker { get; } = new Stack<Location>();
             public Stack<TurnAction> ActionTracker { get; set; } = new Stack<TurnAction>();
 
 
             public bool BeenToTarget(Location currentLocation, TurnAction action)
             {
-                return LocationsTracker.Any(s => s.Location == MovementTool.ApplyMovement(currentLocation, action));
+                var loc = MovementTool.ApplyMovement(currentLocation, action);
+                var value= LocationsTracker.Count(s => s.X==loc.X && s.Y == loc.Y)  > 0;
+                return value;
             }
 
             public void RegisterMove(Location loc, bool isInter, TurnAction ac)
             {
-                LocationsTracker.Push(new TrackedLocation(loc, isInter, ac));
+                StepTracker.Push(new TrackedLocation(loc, ac));
+                LocationsTracker.Push(loc);
+                ActionTracker.Push(ac);
             }
 
             public static IList<TurnAction> GetMovementActions()
@@ -146,32 +154,52 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
             public TurnAction GetNextDirection(IList<TurnAction> movements, Location loc)
             {
 
-                TurnAction previous;
+                LocationsTracker.Push(loc);//Register location as visited
+
+                if (movements.Count == 1)
+                {
+                    try
+                    {
+                        var now = MovementTool.Reverse(ActionTracker.Pop());
+                        StepTracker.Push(new TrackedLocation(loc, now));
+                        return now;
+                    }catch(Exception e)
+                    {
+                        var now = movements[0];
+                        StepTracker.Push(new TrackedLocation(loc, now));
+                        ActionTracker.Push(now);
+                        return now;
+                    }
+                    
+                }
+
+                var trimHasBeen = movements.Where(s => !BeenToTarget(loc, s)).ToList();
+                if (trimHasBeen.Count==0)
+                {
+                    var now = MovementTool.Reverse(ActionTracker.Pop());
+                    StepTracker.Push(new TrackedLocation(loc, now));
+                    return now;
+                }
+                    
+
+                TurnAction dirToGoBias;
                 try
                 {
-                    previous = LocationsTracker.Peek().Action;
+                    dirToGoBias = MovementTool.Leftify(ActionTracker.Peek());
                 }
                 catch (Exception)
                 {
-                    return movements[new Random().Next(movements.Count)];
+                    dirToGoBias = movements[new Random().Next(movements.Count)];
                 }
 
-                if (movements.Count == 2) //Only going on and going back
-                    return previous;//Keep going
+                var value = trimHasBeen.Contains(dirToGoBias)
+                    ? dirToGoBias
+                    : trimHasBeen[new Random().Next(trimHasBeen.Count)];
 
-                var trimHasBeen = movements.Where(s => !BeenToTarget(loc, s));
+                StepTracker.Push(new TrackedLocation(loc, value));
+                ActionTracker.Push(value);
 
-
-                TurnAction dirToGoBias = MovementTool.Leftify(previous);
-                if (trimHasBeen.Contains(dirToGoBias))
-                    return dirToGoBias;
-                do
-                {
-                    dirToGoBias = MovementTool.Rightify(dirToGoBias);
-                } while (!trimHasBeen.Contains(dirToGoBias) && dirToGoBias != previous);
-
-                return dirToGoBias == previous ? MovementTool.Reverse(previous) : dirToGoBias;
-
+                return value;
             }
 
 
