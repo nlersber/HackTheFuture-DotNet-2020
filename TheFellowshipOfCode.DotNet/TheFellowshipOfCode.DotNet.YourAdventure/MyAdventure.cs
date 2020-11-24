@@ -9,6 +9,7 @@ using HTF2020.Contracts.Models.Adventurers;
 using HTF2020.Contracts.Models.Party;
 using HTF2020.Contracts.Requests;
 using HTF2020.Contracts.Models.Enemies;
+using TheFellowshipOfCode.DotNet.YourAdventure.Models;
 
 namespace TheFellowshipOfCode.DotNet.YourAdventure
 {
@@ -17,7 +18,6 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
         private readonly Random _random = new Random();
 
         private readonly MovementTracker movetracker = new MovementTracker();
-        private readonly IntersectionTracker intertracker = new IntersectionTracker();
 
         public Task<Party> CreateParty(CreatePartyRequest request)
         {
@@ -118,45 +118,25 @@ namespace TheFellowshipOfCode.DotNet.YourAdventure
 
         class MovementTracker
         {
-            public Stack<TurnAction> Actions { get; } = new Stack<TurnAction>();
+            public Stack<TrackedLocation> Actions { get; } = new Stack<TrackedLocation>();
 
-
-            public void RegisterMove(TurnAction action)
+            public bool BeenToTarget(Location currentLocation, TurnAction action)
             {
-                Actions.Push(action);
-            }
+                switch (action){
+                    case TurnAction.WalkNorth: Location loc = currentLocation;
+                        loc.Y++;
+                        return Actions.Any(s => s.Location == loc);
 
-            public TurnAction AlwaysGoLeft()
-            {
-                switch (Actions.Peek())
-                {
-                    default: return TurnAction.WalkSouth;
+                    default: return true;
                 }
             }
+            public void RegisterMove(Location loc, bool isInter, TurnAction ac)
+            {
+                Actions.Push(new TrackedLocation(loc, isInter, ac));
+            }
 
 
         }
-
-        class IntersectionTracker
-        {
-            public Stack<Location> Intersections { get; } = new Stack<Location>();
-
-            public void RegisterIntersection(Location loc)
-            {
-                Intersections.Push(loc);
-            }
-
-            public Location RemoveIntersection()
-            {
-                return Intersections.Pop();
-            }
-
-            public Location Peek()
-            {
-                return Intersections.Peek();
-            }
-        }
-
 
 
 
